@@ -1,52 +1,49 @@
-;;; ob-twoslash.el --- Org-babel functions for Twoslash  -*- lexical-binding: t; -*-
+;;; ob-twoslash.el --- The org-babel extension for TypeScript Twoslash. -*- lexical-binding: t; -*-
 
-;; Author: violet
-;; Keywords: literate programming, typescript, twoslash
-;; Package-Requires: ((emacs "27.1") (org "9.0"))
+;; Copyright (C) 2025 kijima Daigo
+
+;; Author: kijima Daigo <norimaking777@gmail.com>
+;; Version: 0.0.1
+;; Keywords: typescript, twoslash
+;; Package-Requires: ((emacs "25.1"))
+;; URL: https://github.com/kijimaD/ob-twoslash
+
+;; This file is NOT part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
-;; Org Babel backend for TypeScript Twoslash.  Executes code blocks
-;; through the Twoslash engine via Docker and returns type information
-;; and errors.
+;; The org-babel extension for TypeScript Twoslash.
+;; Displays type information and errors via Docker.
 
 ;;; Code:
 (require 'ob)
-(require 'ob-eval)
 
-(add-to-list 'org-babel-tangle-lang-exts '("twoslash" . "ts"))
-
-(defvar org-babel-default-header-args:twoslash '((:results . "output")))
+(add-to-list 'org-babel-tangle-lang-exts '("twoslash"))
 
 (defvar ob-twoslash-docker-image "ob-twoslash"
   "Docker image name for the twoslash runner.")
 
-(defun ob-twoslash--ensure-image ()
-  "Ensure the Docker image exists, build if needed."
-  (unless (= 0 (call-process "docker" nil nil nil
-                              "image" "inspect" ob-twoslash-docker-image))
-    (let ((pkg-dir (file-name-directory (or load-file-name buffer-file-name))))
-      (message "ob-twoslash: building Docker image...")
-      (let ((ret (call-process "docker" nil "*ob-twoslash-build*" nil
-                               "build" "-t" ob-twoslash-docker-image pkg-dir)))
-        (unless (= 0 ret)
-          (error "ob-twoslash: docker build failed, see *ob-twoslash-build* buffer"))))))
-
+;;;###autoload
 (defun org-babel-execute:twoslash (body params)
-  "Execute a Twoslash code block BODY with PARAMS."
-  (ob-twoslash--ensure-image)
-  (let ((tmp-file (org-babel-temp-file "twoslash-" ".ts")))
-    (with-temp-file tmp-file
-      (insert body))
-    (org-babel-eval
+  (let* ((tmp-src-file (org-babel-temp-file "" ".ts")))
+    (with-temp-file tmp-src-file (insert body))
+    (shell-command-to-string
      (format "docker run --rm -i %s < %s"
              (shell-quote-argument ob-twoslash-docker-image)
-             (shell-quote-argument tmp-file))
-     "")))
-
-(defun org-babel-prep-session:twoslash (_session _params)
-  "Twoslash does not support sessions."
-  (error "Twoslash does not support sessions"))
+             (shell-quote-argument tmp-src-file)))))
 
 (provide 'ob-twoslash)
 ;;; ob-twoslash.el ends here
