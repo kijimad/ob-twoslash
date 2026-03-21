@@ -1,0 +1,23 @@
+* Installation
+
+#+begin_src emacs-lisp
+(use-package ob-twoslash
+  :straight (:host github :repo "kijimad/ob-twoslash"))
+#+end_src
+
+* Examples
+
+#+begin_src twoslash
+  const a: string | null = "a"
+  //    ^?
+  if (a !== null) {
+     a
+  // ^?
+  }
+#+end_src
+
+#+RESULTS:
+#+begin_src
+const a: string | null (line 1)
+const a: string (line 3)
+#+end_src
